@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+  - name: public
+    schema: public
+
+    tables:
+      - name: transactions
+      - name: products
+      - name: distributors
+      - name: salespersons
+      - name: monthly_targets
+      - name: date_table
+
+models:
+
+  - name: stg_transactions
+    description: Cleaned transaction records.
+
+    columns:
+
+      - name: transaction_id
+        tests:
+          - unique
+          - not_null
+
+      - name: distributor_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_distributors')
+              field: distributor_id
+
+  - name: stg_products
+
+    columns:
+
+      - name: product_id
+
+        tests:
+          - unique
+          - not_null
+
+  - name: mart_sales_performance
+    description: Sales performance mart.
+
+  - name: mart_distributor_summary
+    description: Distributor performance summary.
