@@ -3,23 +3,12 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-dbt/fmn_dbt/target/
-dbt/fmn_dbt/dbt_packages/
-dbt/fmn_dbt/logs/
-data/raw/*.xlsx
+*/target/
+*/dbt_packages/
+*/logs/
+*.xlsx
 !.gitkeep
 airflow.cfg
 airflow.db
 *.log
 profiles.yml
-
-# Airflow files
-airflow/logs/
-airflow/airflow.db
-airflow/airflow.cfg
-airflow/webserver_config.py
-
-# Python environments and caches
-__pycache__/
-*.pyc
-.env

@@ -3,9 +3,8 @@ from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
-DBT_DIR = "/opt/airflow/dags/dbt_transform/sales"
+DBT_DIR = "/opt/airflow/dags/dbt_transform/fmcg_sales"
 DBT_PROFILES_DIR = "/opt/airflow/dags/dbt_transform/fmcg_sales"
-EXEC = "/home/airflow/.local/bin/dbt"
 
 # DAG definition
 with DAG(
@@ -26,19 +25,19 @@ with DAG(
     # Run silver/staging models
     dbt_run_staging = BashOperator(
         task_id="dbt_run_staging",
-        bash_command=f"cd {DBT_DIR} && {EXEC} run --select staging --profiles-dir {DBT_PROFILES_DIR}",
+        bash_command=f"cd {DBT_DIR} && dbt run --select staging --profiles-dir {DBT_PROFILES_DIR}",
     )
 
     # Run gold/marts models
     dbt_run_marts = BashOperator(
         task_id="dbt_run_marts",
-        bash_command=f"cd {DBT_DIR} && {EXEC} run --select marts --profiles-dir {DBT_PROFILES_DIR}",
+        bash_command=f"cd {DBT_DIR} && dbt run --select marts --profiles-dir {DBT_PROFILES_DIR}",
     )
 
     # Test all models
     dbt_test = BashOperator(
         task_id="dbt_test",
-        bash_command=f"cd {DBT_DIR} && {EXEC} test --profiles-dir {DBT_PROFILES_DIR}",
+        bash_command=f"cd {DBT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR}",
     )
 
     dbt_run_staging >> dbt_run_marts >> dbt_test

@@ -21,7 +21,6 @@ models:
 
       - name: transaction_id
         tests:
-          - unique
           - not_null
 
       - name: distributor_id

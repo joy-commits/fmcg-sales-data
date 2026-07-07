@@ -1,6 +1,5 @@
 {{ config(
-    materialized='incremental',
-    unique_key='transaction_id'
+    materialized='table'
 ) }}
 
 select

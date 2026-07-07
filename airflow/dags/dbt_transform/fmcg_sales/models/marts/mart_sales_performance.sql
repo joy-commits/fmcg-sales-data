@@ -1,6 +1,5 @@
 {{ config(
-    materialized='incremental',
-    unique_key='transaction_id'
+    materialized='table'
 ) }}
 
 select
@@ -15,6 +14,7 @@ select
     dist.distributor_name,
     dist.region,
     s.salesperson_name,
+    s.salesperson_id,
     s.team,
     t.quantity,
     t.unit_price_ngn,
@@ -33,4 +33,4 @@ on t.distributor_id = dist.distributor_id
 left join {{ ref('stg_salespersons') }} s
 on t.salesperson_id = s.salesperson_id
 left join {{ ref('stg_date') }} d
-on t.transaction_date = d.date
+on cast(t.transaction_date as date) = cast(d.date as date)

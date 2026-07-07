@@ -1,11 +1,16 @@
 from airflow import DAG
-from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
+from pendulum import datetime, duration
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.providers.standard.operators.bash import BashOperator
 from airflow.hooks.base import BaseHook
 from airflow.sdk import Variable
-from datetime import datetime
+from include.extract import extract
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+DBT_DIR = "/opt/airflow/dags/dbt_transform/fmcg_sales"
+DBT_PROFILES_DIR = "/opt/airflow/dags/dbt_transform/fmcg_sales"
 
 def task_failure_alert(context):
     """Functional alert for DAG run failure"""
@@ -59,36 +64,41 @@ def task_failure_alert(context):
 
 # Default args with failure callback
 args = {
-    'owner': 'Ufuoma',
-    'on_failure_callback': task_failure_alert,
-    'retries': 1,
+    "owner": "Ufuoma",
+    "retries": 0,
+    "on_failure_callback": task_failure_alert,
 }
 
 # DAG definition
 with DAG(
-    dag_id="extract_load_transform_pipeline",
+    dag_id="elt_pipeline",
     start_date=datetime(2026, 7, 6),
-    schedule='@daily',
     default_args=args,
     catchup=False,
-    max_active_runs=1,
-    tags=['elt', 'Master DAG']
+    max_active_runs=1
 ) as dag:
 
-    # Trigger the extraction from Excel to postgres DB
-    trigger_extract = TriggerDagRunOperator(
-        task_id='trigger_extract_to_s3',
-        trigger_dag_id='extract_to_s3',
-        wait_for_completion=True,
-        poke_interval=60
+    extract_and_load = PythonOperator(
+        task_id='extract',
+        python_callable=extract
     )
 
-    # Trigger transformation with dbt
-    trigger_transform = TriggerDagRunOperator(
-        task_id='trigger_dbt_transform',
-        trigger_dag_id='dbt_transform',
-        wait_for_completion=True
+    # Run silver/staging models
+    dbt_run_staging = BashOperator(
+        task_id="dbt_run_staging",
+        bash_command=f"cd {DBT_DIR} && dbt run --select staging --profiles-dir {DBT_PROFILES_DIR}",
     )
 
-    # The flow
-    trigger_extract >> trigger_transform
+    # Run gold/marts models
+    dbt_run_marts = BashOperator(
+        task_id="dbt_run_marts",
+        bash_command=f"cd {DBT_DIR} && dbt run --select marts --profiles-dir {DBT_PROFILES_DIR}",
+    )
+
+    # Test all models
+    dbt_test = BashOperator(
+        task_id="dbt_test",
+        bash_command=f"cd {DBT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR}",
+    )
+
+    extract_and_load >> dbt_run_staging >> dbt_run_marts >> dbt_test
