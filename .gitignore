@@ -12,5 +12,5 @@ airflow.cfg
 airflow.db
 *.log
 profiles.yml
-.env.example
+!.env.example
 */.user.yml
